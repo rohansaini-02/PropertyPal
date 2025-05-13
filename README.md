@@ -140,13 +140,4 @@ Brokers often charge 5–15% of property value, inflate prices, and sometimes mi
 * **Legal Bot**: Auto-generate agreements with e-signatures.
 * **Analytics Dashboard**: Price trends and market insights.
 
-## Contributors
 
-* **Frontend Lead:** Your Name
-* **Backend Lead:** Your Name
-* **Design & UX:** Your Name
-* **QA & Testing:** Your Name
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
