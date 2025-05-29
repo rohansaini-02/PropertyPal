@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: propertypal-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: your_backend_url_here 
