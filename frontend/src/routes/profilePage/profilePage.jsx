@@ -3,7 +3,7 @@ import List from "../../components/list/List";
 import "./profilePage.scss";
 import apiRequest from "../../lib/apiRequest"
 import { Link, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from '../../context/AuthContext'
 import { useLoaderData, Await } from "react-router-dom";
 import { Suspense } from "react";
@@ -13,17 +13,22 @@ function ProfilePage() {
   console.log(data)
   const {updateUser,  CurrentUser} = useContext(AuthContext)
   const navigate = useNavigate()
+  const [logoutError, setLogoutError] = useState(null);
 
-
-const handleLogout =async()=>{
-  try{
-await apiRequest.post("/auth/logout")
-updateUser(null)
-navigate('/')
-  }catch(err){
-console.log(err)
+  const handleLogout =async()=>{
+    try{
+      await apiRequest.post("/auth/logout")
+      updateUser(null)
+      alert("Logged out successfully!");
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
+    }catch(err){
+      console.error("Logout error:", err);
+      setLogoutError("Failed to logout. Please try again.");
+      alert("Failed to logout. Please try again.");
+    }
   }
-}
 
   return (
     <div className="profilePage">
@@ -48,6 +53,7 @@ console.log(err)
               E-mail: <b>{CurrentUser.email}</b>
             </span>
             <button onClick={handleLogout}>Logout</button>
+            {logoutError && <span className="error">{logoutError}</span>}
           </div>
           <div className="title">
             <h1>My List</h1>
