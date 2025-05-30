@@ -1,88 +1,81 @@
-import bcrypt from "bcrypt"; // used to hash passwords securely
-import jwt from "jsonwebtoken"; // used to create login tokens
-import prisma from "../lib/prisma.js"; // handles DB operations (Prisma ORM)
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import prisma from "../lib/prisma.js";
 
-// REGISTER A NEW USER
-export const register = async (req, res) => {
-    const { username, email, password } = req.body;
+// const prisma = new PrismaClient();
 
-    try {
-        // Step 1: Hash the plain password before saving it — never store raw passwords!
-        const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
-        console.log("Hashed Password:", hashedPassword);
+export const register=async (req,res)=>{
+    const {username, email, password} = req.body;
 
-        // Step 2: Save the new user to the database with the hashed password
-        const newUser = await prisma.user.create({
-            data: {
-                username,
-                email,
-                password: hashedPassword,
-            },
-        });
+try{
 
-        console.log("New User Created:", newUser);
+    //HASH THE PASSWORD
 
-        // Step 3: Send success response
-        res.status(201).json({ message: "User created successfully" });
+const hashedPassword = await bcrypt.hash(password, 10)
 
-    } catch (err) {
-        console.error("Error during user registration:", err);
-        res.status(500).json({ messsage: "Failed to create user" }); // (typo: "messsage" can be fixed)
-    }
+console.log(hashedPassword)
+
+    //CREATE A NEW USER
+
+const newUser = await prisma.user.create({
+    data:{
+        username,
+        email, 
+        password :hashedPassword,
+    },
+});
+
+console.log(newUser)
+
+res.status(201).json({message: "User created successfully"})
+}
+catch(err){
+console.log(err)
+res.status(500).json({messsage:"Failed to create user"})
+}
+}
+
+export const login=async(req,res)=>{
+    const {username, password} = req.body;
+
+try{
+    //  CHECK IF USERE EXISTS
+
+    const user = await prisma.user.findUnique({
+        where:{username}
+    })
+    if(!user) return res.status(401).json({message: "Invalid Credentials!"})
+    // CHECH IF PASSWORD IS CORRECT
+
+    const isPasswordValid =await bcrypt.compare(password, user.password)
+    if(!isPasswordValid) return res.status(401).json({message: "Invalid Credentials!"})
+
+    // GENERATE COOKIE TOKEN AND SEND TO THE USER
+
+
+    const age = 1000*60*60*24*7
+
+    const token = jwt.sign({
+        id:user.id,
+        isAdmin: false,
+    }, process.env.JWT_SECRET_KEY,
+    {expiresIn:age}
+);
+
+const {password: userPassword, ...userInfo} = user
+   
+    res.cookie("token",token,{
+        httpOnly:true,
+        // secure:true
+        maxAge: age,
+    }).status(200).json(userInfo)
+
+}catch(err){
+    console.log(err)
+    res.status(500).json({message:"Failed to Login!"})
+}
 };
 
-
-// LOGIN EXISTING USER
-export const login = async (req, res) => {
-    const { username, password } = req.body;
-
-    try {
-        // Step 1: Check if the user exists in the DB
-        const user = await prisma.user.findUnique({
-            where: { username },
-        });
-
-        if (!user) {
-            return res.status(401).json({ message: "Invalid Credentials!" });
-        }
-
-        // Step 2: Compare the entered password with the hashed password in DB
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: "Invalid Credentials!" });
-        }
-
-        // Step 3: Generate a JWT token (valid for 7 days)
-        const age = 1000 * 60 * 60 * 24 * 7; // 7 days in ms
-
-        const token = jwt.sign(
-            {
-                id: user.id,
-                isAdmin: false, // You can update this logic if you add user roles
-            },
-            process.env.JWT_SECRET_KEY,
-            { expiresIn: age }
-        );
-
-        // Step 4: Send the token as an HTTP-only cookie (to prevent JS access)
-        const { password: userPassword, ...userInfo } = user; // remove password before sending user info
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            // secure: true, // uncomment in production for HTTPS-only cookies
-            maxAge: age,
-        }).status(200).json(userInfo);
-
-    } catch (err) {
-        console.error("Login failed:", err);
-        res.status(500).json({ message: "Failed to Login!" });
-    }
-};
-
-
-// LOGOUT USER
-export const logout = (req, res) => {
-    // Clear the cookie from the browser
-    res.clearCookie("token").status(200).json({ message: "Logout Successful" });
+export const logout=(req,res)=>{
+    res.clearCookie("token").status(200).json({message:"Logout Successful"})
 };

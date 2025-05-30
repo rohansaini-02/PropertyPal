@@ -45,20 +45,20 @@
       button {
         padding: 10px 0;
         border-radius: 8px;
-        border: none;
-        background: #2196f3;
-        color: #fff;
+        border: 2px solid #2196f3;
+        background: #fff;
+        color: #2196f3;
         font-weight: bold;
         font-size: 1rem;
         cursor: pointer;
-        transition: background 0.3s, color 0.3s;
+        transition: background 0.2s, color 0.2s;
         box-shadow: 0 2px 8px 0 rgba(33,150,243,0.08);
         height: auto;
         min-height: unset;
         max-height: 44px;
         &:hover {
-          background: #beecf3;
-          color: #4fc3f7;
+          background: #e3f2fd;
+          color: #1565c0;
         }
         &:disabled {
           background: #b3e5fc;

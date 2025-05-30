@@ -1,175 +1,183 @@
-import prisma from "../lib/prisma.js";
-import bcrypt from "bcrypt";
+import prisma from "../lib/prisma.js"
+import bcrypt from "bcrypt"
 
-// Fetch all users from the database
-export const getUsers = async (req, res) => {
-    console.log("it works");
-    try {
+export const getUsers = async (req, res)=>{
+    console.log('it works')
+    try{
         const users = await prisma.user.findMany();
-        res.status(200).json(users);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get users" });
+        res.status(200).json(users)
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Users"})
+    }
+}
 
-// Fetch a single user by ID
-export const getUser = async (req, res) => {
+export const getUser = async (req, res)=>{
     const id = req.params.id;
-    try {
-        const user = await prisma.user.findUnique({ where: { id } });
-        res.status(200).json(user);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get user" });
+    try{
+        const user = await prisma.user.findUnique({
+            where:{ id },
+    });
+        res.status(200).json(user)
     }
-};
+    catch(err){
+        console.log(err)
+        res.status(500).json({message:"Failed to Get Users"})
+    }
+}
 
-// Update user profile info (only if the user is updating their own account)
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res)=>{
     const id = req.params.id;
-    const tokenUserId = req.userId;
-    const { password, avatar, ...inputs } = req.body;
-
-    if (id !== tokenUserId) {
-        return res.status(403).json({ message: "Not authorized" });
+    const TokenUserId = req.userId;
+    const {password, avatar , ...inputs} = req.body
+    if(id !== TokenUserId){
+        res.status(403).json({mesage:"Not Authorized"})
     }
-
-    let updatedPassword = null;
-
-    try {
-        if (password) {
-            updatedPassword = await bcrypt.hash(password, 10);
+    let updatedPassword = null
+    try{
+        if(password){
+            updatedPassword = await bcrypt.hash(password,10)
         }
 
         const updatedUser = await prisma.user.update({
-            where: { id },
+            where:{ id },
             data: {
                 ...inputs,
-                ...(updatedPassword && { password: updatedPassword }),
-                ...(avatar && { avatar }),
+                ...(updatedPassword && {password: updatedPassword}),
+                ...(avatar && {avatar})
             },
-        });
+        })
 
-        // Don't expose the password in the response
-        const { password: _, ...rest } = updatedUser;
-        res.status(200).json(rest);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to update user" });
+        const {password: userPassword,...rest} = updatedUser
+        res.status(200).json(rest)
+
     }
-};
+    catch(err){
+        console.log(err)
+        res.status(500).json({message:"Failed to Get Users"})
+    }
+}
 
-// Delete user account (only by the owner)
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res)=>{
     const id = req.params.id;
-    const tokenUserId = req.userId;
+    const TokenUserId = req.userId;
 
-    if (id !== tokenUserId) {
-        return res.status(403).json({ message: "Not authorized" });
+    if(id !== TokenUserId){
+        res.status(403).json({mesage:"Not Authorized"})
     }
+    try{
 
-    try {
-        await prisma.user.delete({ where: { id } });
-        res.status(200).json({ message: "User deleted" });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to delete user" });
+        await prisma.user.delete({
+            where:{ id }
+        })
+        res.status(200).json({message:"User Deleted"})
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Users"})
+    }
+}
 
-// Toggle post saved/unsaved by the current user
-export const savePost = async (req, res) => {
+export const savePost = async (req, res)=>{
     const postId = req.body.postId;
     const tokenUserId = req.userId;
+    console.log(tokenUserId)
+    console.log(postId)
 
-    try {
+    try{
+
         const savedPost = await prisma.savedPost.findUnique({
-            where: {
-                userId_postId: {
-                    userId: tokenUserId,
-                    postId,
-                },
-            },
-        });
+            where:{ 
+              userId_postId: {
+                userId: tokenUserId,
+                postId,
+              },
+             }
+        })
 
-        if (savedPost) {
-            // If already saved, unsave it
-            await prisma.savedPost.delete({ where: { id: savedPost.id } });
-            return res.status(200).json({ message: "Post unsaved" });
-        } else {
-            // Otherwise, save it
-            await prisma.savedPost.create({
-                data: {
-                    userId: tokenUserId,
-                    postId,
-                },
-            });
-            return res.status(200).json({ message: "Post saved" });
+        if(savedPost){
+            console.log("saved")
+            await prisma.savedPost.delete({
+                where:{
+                    id:savedPost.id,
+                }
+            })
+            res.status(200).json({message:"Post saved"})
         }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to toggle saved post" });
+        
+        else{
+            console.log("notSave")
+            await prisma.savedPost.create({
+                data:{
+                    userId:tokenUserId,
+                    postId, 
+                }
+            })
+            res.status(200).json({ message: "Post saved" });
+        }
     }
-};
+    catch(err){
+        console.log(err)
+        res.status(500).json({message:"Failed to Get Users"})
+    }
+}
 
-// Get all posts by user + all posts they have saved
-export const profilePosts = async (req, res) => {
+export const profilePosts = async (req, res)=>{
     const tokenUserId = req.params.id;
-
-    try {
-        // Fetch user's own posts (also checking who saved them)
+    console.log(req.body)
+    console.log(tokenUserId)
+    try{
         const userPosts = await prisma.post.findMany({
-            where: { userId: tokenUserId },
-            include: {
+            where:{ userId: tokenUserId },
+            include:{
                 savedPosts: {
-                    select: { userId: true },
-                },
-            },
-        });
-
-        // Fetch posts saved by this user
+                    select:{
+                        userId: true
+                    }
+                }
+            }
+    });
         const saved = await prisma.savedPost.findMany({
-            where: { userId: tokenUserId },
-            include: {
+            where:{ userId: tokenUserId },
+            include:{
                 post: true,
-            },
-        });
+            }
+    });
+    const savedPosts = saved.map(item => ({
+      ...item.post,
+      savedPosts: [{userId:item.userId}]
+  }));
 
-        // Format saved posts to match structure
-        const savedPosts = saved.map(item => ({
-            ...item.post,
-            savedPosts: [{ userId: item.userId }],
-        }));
-
-        res.status(200).json({ userPosts, savedPosts });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get profile posts" });
+        res.status(200).json({userPosts, savedPosts})
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Profile Posts"})
+    }
+}
 
-// Count unread chats for the current user
-export const getNotificationNumber = async (req, res) => {
+
+export const getNotificationNumber = async (req, res)=>{
     const tokenUserId = req.userId;
-
-    try {
+    console.log(req)
+    try{
         const number = await prisma.chat.count({
-            where: {
-                userIDs: {
-                    hasSome: [tokenUserId],
+            where:{
+                userIDs:{
+                    hasSome:[tokenUserId],
                 },
-                NOT: {
-                    seenBy: {
-                        hasSome: [tokenUserId],
-                    },
-                },
-            },
-        });
-
-        res.status(200).json(number);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get notifications" });
+                NOT:{
+                    seenBy:{
+                        hasSome: [tokenUserId]
+                    }
+                }
+            }
+        })
+        res.status(200).json(number)
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Profile Posts"})
+    }
+}

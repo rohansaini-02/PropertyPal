@@ -1,137 +1,122 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/prisma.js"
 
-// Fetch all chats that include the currently logged-in user
-export const getChats = async (req, res) => {
-    const tokenUserId = req.userId;
 
-    try {
-        // Find all chat records where this user's ID is one of the participants
+export const getChats= async (req, res)=>{
+    const tokenUserId = req.userId
+    try{
         const chats = await prisma.chat.findMany({
-            where: {
-                userIDs: {
-                    hasSome: [tokenUserId],
-                },
-            },
-        });
+            where:{
+                userIDs:{
+                    hasSome:[tokenUserId],
+                }
+            }
+        })
 
-        // For each chat, find and attach the other user's basic info
-        for (const chat of chats) {
-            const receiverId = chat.userIDs.find(id => id !== tokenUserId);
-
+        for (const chat of chats){
+            const receiverId = chat.userIDs.find(id=> id!==tokenUserId)
             const receiver = await prisma.user.findUnique({
-                where: { id: receiverId },
-                select: {
-                    id: true,
-                    username: true,
-                    avatar: true,
+                where:{
+                    id:receiverId,
                 },
-            });
-
-            // Add receiver info directly to the chat object
-            chat.receiver = receiver;
+                select:{
+                    id:true,
+                    username:true,
+                    avatar:true,
+                }
+            })
+            chat.receiver = receiver
         }
 
-        res.status(200).json(chats);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get chats" });
+        res.status(200).json(chats)
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Chats"})
+    }
+}
 
-// Fetch a single chat and its messages for the current user
-export const getChat = async (req, res) => {
-    const tokenUserId = req.userId;
-
-    try {
-        // Find the specific chat if the user is one of the participants
+export const getChat= async (req, res)=>{
+    const tokenUserId = req.userId
+    try{
         const chat = await prisma.chat.findUnique({
-            where: {
-                id: req.params.id,
-                userIDs: {
-                    hasSome: [tokenUserId],
-                },
+            where:{
+                id:req.params.id,
+                userIDs:{
+                    hasSome:[tokenUserId],
+                }
             },
-            include: {
-                messages: {
-                    orderBy: {
-                        createdAt: "asc", // sort messages from oldest to newest
-                    },
-                },
-            },
-        });
+            include:{
+                messages:{
+                    orderBy:{
+                        createdAt:"asc",
+                    }
+                }
+            }
+        })
 
-        // Mark this chat as seen by the current user
         await prisma.chat.update({
-            where: { id: req.params.id },
-            data: {
-                seenBy: {
-                    push: [tokenUserId],
-                },
+            where:{
+                id:req.params.id
             },
-        });
-
-        res.status(200).json(chat);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to get chat" });
+            data:{
+                seenBy:{
+                    push:[tokenUserId]
+                }
+            }
+        })
+        res.status(200).json(chat)
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Chats"})
+    }
+}
 
-// Create a new chat if one doesn't already exist between the two users
-export const addChat = async (req, res) => {
-    const tokenUserId = req.userId;
-
-    try {
-        // Check if a chat already exists with the receiver
+export const addChat= async (req, res)=>{
+    const tokenUserId = req.userId
+    try{
         const present = await prisma.chat.findMany({
-            where: {
-                userIDs: {
-                    hasSome: [req.body.receiverId],
-                },
-            },
-        });
-
-        // If no chat exists, or the current user isn't part of it, create a new one
-        if (present.length === 0 || !present[0].userIDs.includes(tokenUserId)) {
-            const newChat = await prisma.chat.create({
-                data: {
-                    userIDs: [tokenUserId, req.body.receiverId],
-                },
-            });
-
-            return res.status(200).json(newChat);
-        }
-
-        // If chat already exists, return that info
-        res.status(200).json({ message: "Chat already exists" });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to create chat" });
+            where:{
+                userIDs:{
+                    hasSome:[req.body.receiverId],
+                }
+            }
+        })
+    if(present.length == 0 || present.userIDs[0] !== tokenUserId){
+        const newChat = await prisma.chat.create({
+            data:{
+                userIDs: [tokenUserId, req.body.receiverId]
+            }
+        })
+        res.status(200).json(newChat)
     }
-};
+    }
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Chats"})
+    }
+}
 
-// Mark a specific chat as read by the current user
-export const readChat = async (req, res) => {
-    const tokenUserId = req.userId;
-
-    try {
+export const readChat= async (req, res)=>{
+    const tokenUserId = req.userId
+    try{
         const chat = await prisma.chat.update({
-            where: {
-                id: req.params.id,
-                userIDs: {
-                    hasSome: [tokenUserId],
-                },
+            where:{
+                id:req.params.id,
+                userIDs:{
+                    hasSome:[tokenUserId]
+                }
             },
-            data: {
-                seenBy: {
-                    push: [tokenUserId],
-                },
-            },
-        });
-
-        res.status(200).json(chat);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Failed to mark chat as read" });
+            data:{
+                seenBy:{
+                    push:[tokenUserId]
+                }
+            }
+        })
+        res.status(200).json(users)
     }
-};
+    catch(err){
+        console.log(err)
+        req.status(500).json({message:"Failed to Get Chats"})
+    }
+}
