@@ -46,15 +46,16 @@
         padding: 14px;
         border-radius: 8px;
         border: none;
-        background: linear-gradient(90deg, #4fc3f7 0%, #2196f3 100%);
+        background: #2196f3;
         color: #fff;
         font-weight: bold;
         font-size: 1rem;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.3s, color 0.3s;
         box-shadow: 0 2px 8px 0 rgba(33,150,243,0.08);
         &:hover {
-          background: linear-gradient(90deg, #2196f3 0%, #4fc3f7 100%);
+          background: #beecf3;
+          color: #4fc3f7;
         }
         &:disabled {
           background: #b3e5fc;
